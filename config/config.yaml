@@ -1,0 +1,166 @@
+# ---------------- Phase control ----------------
+phase: test                                               # Options: train | val | test
+cpu: false 
+seed: 42
+sanity_check: false 
+
+# ---------------- Data config ----------------
+data:
+  csv_path: "path/to/your/data.csv"                       # Path to the CSV file containing video paths, tabular features, and labels
+  video_root: "path/to/video/avi/files"                   # Root directory where video files are stored
+  tabular_features: ["feature1", "feature2", "feature3"]  # List of tabular feature column names in the CSV for multimodal input
+  label_cols: ["Clip_id","Severity"]                      # List of target columns NOTE: include "Clip_id" which is a unique identifier for pair video-tabular data
+  split_col:                                              # Or leave empty to split randomly
+  val_ratio: 0.15
+  test_ratio: 0.15
+
+  # Video data Parameters
+  stats_sample_size: all                                   # sample size to calculate video mean and std for normalization
+  size: [128, 128]                                         # size of the video frames (height, width)
+  clip_len: 32                                             # Number of frames per clip
+  frame_stride: 1                                          # Stride between frames
+  sampling: center                                         # for videos longer than clip_len. Options: center | random | all | DO Not Change
+  normalization: dataset                                   # Options: imagenet | dataset (customized to the video dataset) | none
+  grayscale: false
+  show_tqdm: true
+
+balance:
+  mode: video_global                                       # Options: video_global | none
+  target_col: "Severity"
+
+# ---------------- Model config ----------------
+model:
+  name: multimodal                                        # Options: multimodal | custom3dnet | resnet | 2plus1dnet
+  video_backbone: custom3dnet                             # Options: custom3dnet | resnet | r2plus1d
+  use_tabular: false                                      # activated in case of multimodal model, otherwise ignored
+  use_video: true
+
+  stem:
+    in_channels: 3
+    mid_channels: 64
+    out_channels: 64
+    use_temporal_conv: true
+    spatial_kernel_size: [1, 7, 7]
+    temporal_kernel_size: [3, 1, 1]
+    stride: [1, 2, 2]
+
+  layers:
+    - name: layer1
+      num_blocks: 2
+      in_channels: 64
+      mid_channels: 64
+      out_channels: 64
+      stride: [1, 1, 1]
+      use_temporal_conv: true
+      spatial_kernel_size: [1, 3, 3]
+      temporal_kernel_size: [3, 1, 1]
+      dropout: 0.0
+
+    - name: layer2
+      num_blocks: 2
+      in_channels: 64
+      mid_channels: 64
+      out_channels: 64
+      stride: [1, 2, 2]
+      use_temporal_conv: true
+      spatial_kernel_size: [1, 3, 3]
+      temporal_kernel_size: [3, 1, 1]
+      dropout: 0.0
+
+    - name: layer3
+      num_blocks: 2
+      in_channels: 64
+      mid_channels: 64
+      out_channels: 64
+      stride: [1, 2, 2]
+      use_temporal_conv: true
+      spatial_kernel_size: [1, 3, 3]
+      temporal_kernel_size: [3, 1, 1]
+      dropout: 0.0
+
+    - name: layer4
+      num_blocks: 2
+      in_channels: 64
+      mid_channels: 64
+      out_channels: 64
+      stride: [2, 2, 2]
+      use_temporal_conv: true
+      spatial_kernel_size: [1, 3, 3]
+      temporal_kernel_size: [3, 1, 1]
+      dropout: 0.1
+
+  videoattention:
+    type: spaciotemporal                                     # Options: spatial | temporal | spatiotemporal
+    patch_size: [2, 2, 2]
+    pad_size: [0, 0, 0]
+    num_heads: 4
+    num_layers: 2
+    cls_token: false
+    depatchify: true
+    average_pool: false
+    attention_pool: false
+    flatten: true
+
+  # Modify in case of tabular data as a input modality (use_tabular: false), otherwise ignored
+  tabular:
+    input_dim: 55 
+    hidden_dims: [64, 64]
+    out_dim: 64
+    activation: leackyrelu
+    normalization: groupnorm
+    dropout: 0
+    pretrained_path: "" 
+    freeze: false
+
+  # Modify in case of tabular data as a input modality, otherwise ignored
+  fusion:
+    type: "concatenate"                                     # Options: concatenate | cross_attention | mlp
+    embed_dim: 65600
+    num_heads: 4
+    dropout: 0.1
+    fusion_mode: "bidirectional"                            # Options: v2t | t2v | bidirectional
+    tokens_per_video: 4
+    tokens_per_tabular: 4
+    combine_mode: "avg"                                     # for bidirectional: avg | concat
+
+  predhead:
+    input_dim: 65536
+    hidden_dims: [500, 50]
+    out_dim: 1 
+    activation: leakyrelu
+    normalization: layernorm
+    dropout: 0.2
+    multitask_head: true
+
+# ---------------- Training config ----------------
+train:
+  batch_size: 8
+  epochs: 100
+  lr: 3e-4
+  weight_decay: 1e-4
+  early_stopping_patience: 20
+  out_dir: runs/severity_test
+  num_workers: 4
+  eval_after_train: true 
+  loss_weights: null
+  resume: false
+  show_tqdm: true
+  loss_agg: "mean" 
+
+# ---------------- Evaluation config ----------------
+eval:
+  checkpoint: null                                          # Use 'best.pt' by default otherwise specity path
+  threshold: 0.3 
+  metric_level: video                                       # Options: video | clip
+  saliency: true
+  saliency_batches: 8
+  video_reduce:
+    type: "prob_max"                                        # Options: prob_mean | prob_max | prob_topk | logit_mean | logit_max | logit_topk
+    topk: 0.35
+
+# ---------------- WandB config ----------------
+wandb:
+  enable: false
+  project: AF-Echo
+  name: test_run
+  api_key: "---"

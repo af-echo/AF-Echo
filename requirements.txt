@@ -1,0 +1,28 @@
+# ---- Core deep learning ----
+torch==2.7.1
+torchvision==0.22.1
+
+# ---- Scientific stack ----
+numpy==2.2.6
+pandas==2.3.1
+scipy==1.16.0
+scikit-learn==1.7.1
+
+# ---- Medical imaging & video ----
+opencv-python==4.12.0.88
+pydicom==3.0.1
+scikit-image==0.25.2
+imageio==2.37.0
+pillow==11.3.0
+
+# ---- Visualization ----
+matplotlib==3.10.3
+seaborn==0.13.2
+
+# ---- Utilities ----
+tqdm==4.67.1
+PyYAML==6.0.2
+einops==0.8.0
+
+# ---- Experiment tracking (optional) ----
+wandb==0.21.1
