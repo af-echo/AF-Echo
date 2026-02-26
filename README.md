@@ -3,7 +3,7 @@ Predicting long-term cardiac rhythm outcomes from baseline imaging remains a maj
 
 ---
 ### Model
-<img width="1208" height="341" alt="Model" src="https://github.com/user-attachments/assets/5af2c7ac-b2d9-46dd-90a6-f2e03bfcca99" />
+<img width="1208" height="341" alt="Model" src="https://github.com/user-attachments/assets/e1ffb75c-a977-499b-a588-7403dc5a3ef5" />
 
 AF-Echo is an end-to-end spatio-temporal learning framework composed of the following components:
 - **Video encoder**  
